@@ -1,20 +1,26 @@
 package api
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"weixin/types"
+)
 
-// @Summary 获取用户信息
+var weChat *types.WeChat
+
+// @Summary 获取授权引导页面
 // @Schemes
-// @Description 获取用户信息
+// @Description 获取授权引导页面
 // @Tags config
 // @Accept json
 // @Produce json
-// @Router /getUserInfo [get]
+// @Router /getAuthUrl [get]
 func userRouter(app *gin.RouterGroup) {
-	app.GET("/getUserInfo", GetWechatUserInfo)
+	app.GET("/getAuthUrl", GetAuthUrl)
 }
-func GetWechatUserInfo(c *gin.Context) {
-	//	获取code
-	//	调用微信接口换取unionID、openID
-	//	获取用户信息
-	//	存储用户信息
+func GetAuthUrl(c *gin.Context) {
+	redirectUrl := c.Param("url")
+	oauth2Url := weChat.GetAuthUrl(redirectUrl)
+	c.JSON(200, gin.H{
+		"oauth2Url": oauth2Url,
+	})
 }
