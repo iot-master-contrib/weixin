@@ -45,7 +45,7 @@ func Startup(app *web.Engine) error {
 	influx.Open()
 	internal.SubscribeProperty(mqtt.Client)
 	api.RegisterRoutes(app.Group("/app/weixin/api"))
-	web.RegisterRoutes(app.Group("/app/weixin"), "weixin")
+
 	return nil
 }
 func Register() error {

@@ -1,20 +1,11 @@
 package influx
 
 import (
+	"context"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
 	"time"
-)
-
-package influx
-
-import (
-"context"
-influxdb2 "github.com/influxdata/influxdb-client-go/v2"
-"github.com/influxdata/influxdb-client-go/v2/api"
-"github.com/influxdata/influxdb-client-go/v2/api/write"
-"time"
 )
 
 var Writer api.WriteAPI

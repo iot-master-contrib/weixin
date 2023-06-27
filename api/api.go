@@ -3,5 +3,7 @@ package api
 import "github.com/gin-gonic/gin"
 
 func RegisterRoutes(app *gin.RouterGroup) {
-	userRouter(app.Group("/user"))
+	miniprogramRouter(app.Group("/miniprogram"))
+	officialaccountRouter(app.Group("/officialaccount"))
+	payRouter(app.Group("/pay"))
 }

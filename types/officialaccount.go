@@ -20,12 +20,6 @@ type UserInfo struct {
 	Unionid    string   `json:"unionid"`
 }
 
-type WeChat struct {
-	AppId       string `json:"app_id"`
-	AppSecret   string `json:"app_secret"`
-	AccessToken string `json:"access_token"`
-}
-
 type SnsOauth2 struct {
 	AccessToken    string `json:"access_token"`
 	ExpiresIn      int    `json:"expires_in"`
@@ -41,17 +35,22 @@ type AccessTokenErrorResponse struct {
 	ErrCode string `json:"err_code"`
 }
 
+const (
+	redirectAuthURL       = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=%s&redirect_uri=%s&response_type=code&scope=%s&state=%s#wechat_redirect"
+	accessTokenURL        = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=%s&secret=%s&code=%s&grant_type=authorization_code"
+	refreshAccessTokenURL = "https://api.weixin.qq.com/sns/oauth2/refresh_token?appid=%s&grant_type=refresh_token&refresh_token=%s"
+)
+
 // 授权成功返回url
-func (weChat *WeChat) GetAuthUrl(redirectUrl string) string {
-	oauth2url := fmt.Sprintf("https://open.weixin.qq.com/connect/oauth2/authorize?appid=%s&redirect_uri=%s&response_type=code&scope=snsapi_userinfo&state=STATE#wechat_redirect", weChat.AppId, redirectUrl)
+func (weChat *Config) GetAuthUrl(redirectUrl string) string {
+	oauth2url := fmt.Sprintf(redirectAuthURL, weChat.AppId, redirectUrl, "snsapi_userinfo ")
 	return oauth2url
 }
 
 // 通过code获取接口调用凭证
-func (weChat *WeChat) GetAccessToken(code string) (*SnsOauth2, error) {
-	url := fmt.Sprintf("https://api.weixin.qq.com/sns/oauth2/access_token?appid=%s&secret=%s&code=%s&grant_type=authorization_code", weChat.AppId, weChat.AppSecret, code)
+func (weChat *Config) GetAccessToken(code string) (*SnsOauth2, error) {
+	url := fmt.Sprintf(accessTokenURL, weChat.AppId, weChat.AppSecret, code)
 	resp, err := http.Get(url)
-
 	if err != nil || resp.StatusCode != http.StatusOK {
 		fmt.Println("获取 AccessToken 错误", err)
 		return nil, err
@@ -81,7 +80,7 @@ func (weChat *WeChat) GetAccessToken(code string) (*SnsOauth2, error) {
 	}
 
 }
-func (weChat *WeChat) GetUserInfo(accessToken, openId string) (*UserInfo, error) {
+func (weChat *Config) GetUserInfo(accessToken, openId string) (*UserInfo, error) {
 	url := fmt.Sprintf("https://api.weixin.qq.com/sns/userinfo?access_token=%s&openid=%s&lang=zh_CN", accessToken, openId)
 	resp, err := http.Get(url)
 	if err != nil || resp.StatusCode != http.StatusOK {
@@ -112,8 +111,8 @@ func (weChat *WeChat) GetUserInfo(accessToken, openId string) (*UserInfo, error)
 		return &userInfo, nil
 	}
 }
-func (weChat *WeChat) RefreshToken(refreshToken string) (*SnsOauth2, error) {
-	url := fmt.Sprintf("https://api.weixin.qq.com/sns/oauth2/refresh_token?appid=%s&grant_type=refresh_token&refresh_token=%s", weChat.AppId, refreshToken)
+func (weChat *Config) RefreshToken(refreshToken string) (*SnsOauth2, error) {
+	url := fmt.Sprintf(refreshAccessTokenURL, weChat.AppId, refreshToken)
 	resp, err := http.Get(url)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		fmt.Println("重新获取 AccessToken get请求失败")
