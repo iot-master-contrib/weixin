@@ -80,6 +80,8 @@ func (weChat *Config) GetAccessToken(code string) (*SnsOauth2, error) {
 	}
 
 }
+
+// 获取用户信息
 func (weChat *Config) GetUserInfo(accessToken, openId string) (*UserInfo, error) {
 	url := fmt.Sprintf("https://api.weixin.qq.com/sns/userinfo?access_token=%s&openid=%s&lang=zh_CN", accessToken, openId)
 	resp, err := http.Get(url)
@@ -111,6 +113,8 @@ func (weChat *Config) GetUserInfo(accessToken, openId string) (*UserInfo, error)
 		return &userInfo, nil
 	}
 }
+
+// 重新获取AccessToken
 func (weChat *Config) RefreshToken(refreshToken string) (*SnsOauth2, error) {
 	url := fmt.Sprintf(refreshAccessTokenURL, weChat.AppId, refreshToken)
 	resp, err := http.Get(url)
