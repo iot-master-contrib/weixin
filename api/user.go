@@ -12,6 +12,7 @@ var weChat = &types.WeChat{
 	AppSecret:   "",
 	AccessToken: "",
 }
+
 //var userInfo *types.UserInfo
 
 // GetAuthUrl @Summary 获取授权引导页面
@@ -50,7 +51,7 @@ func GetAccessToken(c *gin.Context) {
 // @Tags user
 // @Accept json
 // @Produce json
-// @Router /getUserInfo [get]
+// @Router /getUserInfo [post]
 func GetUserInfo(c *gin.Context) {
 	snsOauth2 := types.SnsOauth2{}
 	err := c.ShouldBind(&snsOauth2)
@@ -63,8 +64,31 @@ func GetUserInfo(c *gin.Context) {
 	}
 	curd.OK(c, info)
 }
+
+// RefreshToken @Summary 刷新AccessToken
+// @Schemes
+// @Description 刷新AccessToken
+// @Tags user
+// @Accept json
+// @Produce json
+// @Router /refreshToken [get]
+func RefreshToken(c *gin.Context) {
+	snsOauth2 := types.SnsOauth2{}
+	err := c.ShouldBind(&snsOauth2)
+	if err != nil {
+		curd.Error(c, err)
+	}
+	token, err := weChat.RefreshToken(snsOauth2.RefreshToken)
+	if err != nil {
+		curd.Error(c, err)
+		return
+	}
+	curd.OK(c, token)
+
+}
 func userRouter(app *gin.RouterGroup) {
 	app.GET("/getAuthUrl", GetAuthUrl)
 	app.GET("/getAccessToken", GetAccessToken)
 	app.POST("/getUserInfo", GetUserInfo)
+	app.GET("/refreshToken", RefreshToken)
 }

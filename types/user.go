@@ -81,7 +81,7 @@ func (weChat *WeChat) GetAccessToken(code string) (*SnsOauth2, error) {
 	}
 
 }
-func (weChat *WeChat) GetUserInfo(accessToken, openId string) (*userInfo, error) {
+func (weChat *WeChat) GetUserInfo(accessToken, openId string) (*UserInfo, error) {
 	url := fmt.Sprintf("https://api.weixin.qq.com/sns/userinfo?access_token=%s&openid=%s&lang=zh_CN", accessToken, openId)
 	resp, err := http.Get(url)
 	if err != nil || resp.StatusCode != http.StatusOK {
@@ -110,5 +110,36 @@ func (weChat *WeChat) GetUserInfo(accessToken, openId string) (*userInfo, error)
 			return nil, err
 		}
 		return &userInfo, nil
+	}
+}
+func (weChat *WeChat) RefreshToken(refreshToken string) (*SnsOauth2, error) {
+	url := fmt.Sprintf("https://api.weixin.qq.com/sns/oauth2/refresh_token?appid=%s&grant_type=refresh_token&refresh_token=%s", weChat.AppId, refreshToken)
+	resp, err := http.Get(url)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		fmt.Println("重新获取 AccessToken get请求失败")
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("重新获取 AccessToken 读取返回body错误", err)
+		return nil, err
+	}
+	if bytes.Contains(body, []byte("errcode")) {
+		ater := AccessTokenErrorResponse{}
+		err = json.Unmarshal(body, &ater)
+		if err != nil {
+			fmt.Printf("重新获取 AccessToken 的错误信息 %+v\n", ater)
+			return nil, err
+		}
+		return nil, fmt.Errorf("%s", ater.ErrMsg)
+	} else {
+		so2 := SnsOauth2{}
+		err = json.Unmarshal(body, &so2)
+		if err != nil {
+			fmt.Println("重新获取 AccessToken 返回数据json解析错误", err)
+			return nil, err
+		}
+		return &so2, nil
 	}
 }
