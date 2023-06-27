@@ -1,11 +1,24 @@
 package types
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
-type userInfo struct{}
+type UserInfo struct {
+	Openid     string   `json:"openid"`
+	Nickname   string   `json:"nickname"`
+	Sex        int      `json:"sex"`
+	Province   string   `json:"province"`
+	City       string   `json:"city"`
+	Country    string   `json:"country"`
+	HeadImgurl string   `json:"headimgurl"`
+	Privilege  []string `json:"privilege"`
+	Unionid    string   `json:"unionid"`
+}
 
 type WeChat struct {
 	AppId       string `json:"app_id"`
@@ -37,10 +50,65 @@ func (weChat *WeChat) GetAuthUrl(redirectUrl string) string {
 // 通过code获取接口调用凭证
 func (weChat *WeChat) GetAccessToken(code string) (*SnsOauth2, error) {
 	url := fmt.Sprintf("https://api.weixin.qq.com/sns/oauth2/access_token?appid=%s&secret=%s&code=%s&grant_type=authorization_code", weChat.AppId, weChat.AppSecret, code)
-	accessToken, err := http.Get(url)
-	if err != nil {
-		fmt.Println("获取AccessToken错误")
+	resp, err := http.Get(url)
+
+	if err != nil || resp.StatusCode != http.StatusOK {
+		fmt.Println("获取 AccessToken 错误", err)
 		return nil, err
 	}
-	return &accessToken, nil
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("获取 AccessToken 读取返回body错误", err)
+		return nil, err
+	}
+	if bytes.Contains(body, []byte("errcode")) {
+		ater := AccessTokenErrorResponse{}
+		err = json.Unmarshal(body, &ater)
+		if err != nil {
+			fmt.Printf("获取 AccessToken 的错误信息 %+v\n", ater)
+			return nil, err
+		}
+		return nil, fmt.Errorf("%s", ater.ErrMsg)
+	} else {
+		atr := SnsOauth2{}
+		err = json.Unmarshal(body, &atr)
+		if err != nil {
+			fmt.Println("获取 AccessToken 返回数据json解析错误", err)
+			return nil, err
+		}
+		return &atr, nil
+	}
+
+}
+func (weChat *WeChat) GetUserInfo(accessToken, openId string) (*userInfo, error) {
+	url := fmt.Sprintf("https://api.weixin.qq.com/sns/userinfo?access_token=%s&openid=%s&lang=zh_CN", accessToken, openId)
+	resp, err := http.Get(url)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		fmt.Println("用户信息get请求失败")
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("获取 用户信息 读取返回body错误", err)
+		return nil, err
+	}
+	if bytes.Contains(body, []byte("errcode")) {
+		ater := AccessTokenErrorResponse{}
+		err = json.Unmarshal(body, &ater)
+		if err != nil {
+			fmt.Printf("获取 用户信息 的错误信息 %+v\n", ater)
+			return nil, err
+		}
+		return nil, fmt.Errorf("%s", ater.ErrMsg)
+	} else {
+		userInfo := UserInfo{}
+		err = json.Unmarshal(body, &userInfo)
+		if err != nil {
+			fmt.Println("获取 用户信息 返回数据json解析错误", err)
+			return nil, err
+		}
+		return &userInfo, nil
+	}
 }
